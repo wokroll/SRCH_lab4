@@ -1,6 +1,6 @@
 n_GARM <- 8
 w_GRAN <- 1200
-N <- 1024
+N <- 2048
 
 generate_signal <- function(n_GARM = 8, w_GRAN = 1200, N){
   
@@ -45,8 +45,42 @@ get_FFT <- function(x){
   return(f1)
 }
 
+get_table_dft <- function(sig){
+  p = N
+  k = N
+  w_table_real <- matrix(0, p, k)
+  w_table_image <- matrix(0, p ,k)
+  w_table <- matrix(0, p ,k)
+  
+  for (i in 1:p) for(j in 1:k){
+    w_table_real[i,j] <- cos(2*pi/N*i*j)
+    w_table_image[i,j] <- sin(2*pi/N*i*j)
+  }
+  
+  w_table <- list(w_table_real, w_table_image)
+  
+  Fp2_real <- numeric(N)
+  Fp2_image <- numeric(N)
+
+  for (i in 1:nrow(w_table[[1]])) for (j in  1:ncol(w_table[[1]])){
+    Fp2_real[i] <- Fp2_real[i] + sig[j] * w_table[[1]][i,j]
+    Fp2_image[i] <- Fp2_image[i] + sig[j] * w_table[[2]][i,j]
+  }
+  data <- data.frame(Fp2_real, Fp2_image)
+
+  return(apply(data, 1, function(x) sqrt(x[[1]]**2+x[[2]]**2)))
+}
+
 sig <- generate_signal(N = N)
 
+start <- Sys.time()
 my_fft <- get_FFT(sig)
+end <- Sys.time()
+time_fft <- as.numeric(end - start)
 
-my_plot <- plot(seq(1,N), my_fft, type = "l")
+start <- Sys.time()
+table_dft <- get_table_dft(sig)
+end <- Sys.time()
+time_table_dft <- as.numeric(end - start)
+
+result <- sprintf("Result for FFT is %.2f, result for Table DFT is %.2f, FFT is %.2fx faster", time_fft,time_table_dft,time_table_dft/time_fft)
